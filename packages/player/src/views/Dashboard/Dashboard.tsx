@@ -38,7 +38,7 @@ const DashboardContent: FC<{
 export const Dashboard: FC = () => {
   const { t } = useTranslation('dashboard');
   const isStartingUp = useStartupStore((state) => state.isStartingUp);
-  const providers = useProviders('dashboard') as DashboardProvider[];
+  const providers = useProviders('dashboard');
 
   const activeWidgets = useMemo(() => {
     const capabilities = new Set(
