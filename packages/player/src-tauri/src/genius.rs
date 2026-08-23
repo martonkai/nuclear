@@ -1,5 +1,5 @@
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
-use reqwest::Client;
+use reqwest::blocking::Client;
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -12,7 +12,7 @@ pub struct GeniusLyrics {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn genius_lyrics(artist: String, title: String) -> Result<Option<GeniusLyrics>, String> {
+pub fn genius_lyrics(artist: String, title: String) -> Result<Option<GeniusLyrics>, String> {
     let client = Client::builder()
         .user_agent("Nuclear PowerTools/0.1")
         .build()
@@ -20,12 +20,12 @@ pub async fn genius_lyrics(artist: String, title: String) -> Result<Option<Geniu
 
     let query = utf8_percent_encode(&format!("{} {}", artist, title), NON_ALPHANUMERIC).to_string();
     let search_url = format!("https://genius.com/api/search/multi?q={query}");
-    let search = client.get(search_url).send().await.map_err(|e| e.to_string())?;
+    let search = client.get(search_url).send().map_err(|e| e.to_string())?;
     if !search.status().is_success() {
         return Ok(None);
     }
 
-    let payload: serde_json::Value = search.json().await.map_err(|e| e.to_string())?;
+    let payload: serde_json::Value = search.json().map_err(|e| e.to_string())?;
     let hits = payload["response"]["sections"]
         .as_array()
         .into_iter()
@@ -59,12 +59,12 @@ pub async fn genius_lyrics(artist: String, title: String) -> Result<Option<Geniu
         return Ok(None);
     }
 
-    let page = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    let page = client.get(&url).send().map_err(|e| e.to_string())?;
     if !page.status().is_success() {
         return Ok(None);
     }
 
-    let text = extract_lyrics(&page.text().await.map_err(|e| e.to_string())?);
+    let text = extract_lyrics(&page.text().map_err(|e| e.to_string())?);
     if text.is_empty() {
         return Ok(None);
     }
