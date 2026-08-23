@@ -2,7 +2,7 @@ use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use reqwest::blocking::Client;
 use serde::Serialize;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct LyricsResult {
     pub title: String,
     pub artist: String,
@@ -16,7 +16,7 @@ pub struct LyricsResult {
 #[specta::specta]
 pub fn genius_lyrics(artist: String, title: String) -> Result<LyricsResult, String> {
     let client = Client::builder()
-        .user_agent("Nuclear PowerTools/0.1 (https://github.com/martonkai/nuclear)")
+        .user_agent("Nuclear PowerTools/0.1 (https://github.com/nukeop/nuclear)")
         .build()
         .map_err(|e| e.to_string())?;
 
