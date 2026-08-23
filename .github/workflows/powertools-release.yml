@@ -1,0 +1,57 @@
+name: PowerTools Windows Release
+
+on:
+  push:
+    branches:
+      - feature/powertools
+
+permissions:
+  contents: write
+
+jobs:
+  windows-release:
+    if: startsWith(github.event.head_commit.message, '[powertools-release]')
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Disable updater signing for community build
+        shell: pwsh
+        run: |
+          $path = 'packages/player/src-tauri/tauri.conf.json'
+          $config = Get-Content $path -Raw | ConvertFrom-Json
+          $config.bundle.createUpdaterArtifacts = $false
+          $config | ConvertTo-Json -Depth 100 | Set-Content $path
+
+      - name: Build Windows installer
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: powertools-0.1.0
+          releaseName: Nuclear PowerTools v0.1.0
+          releaseBody: |
+            Windows x64 build of Nuclear with PowerTools integration.
+
+            Includes the PowerTools foundation: My Wave, favorite shuffle, Genius lyrics integration, native tray controls and dashboard integration.
+          releaseDraft: false
+          prerelease: true
+          args: ''
