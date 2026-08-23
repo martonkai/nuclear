@@ -2,6 +2,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { formatArtistNames, type Track } from '@nuclearplayer/model';
 
+import { discoveryHost } from './discoveryHost';
+import { providersHost } from './providersHost';
 import { useFavoritesStore } from '../stores/favoritesStore';
 import { useQueueStore } from '../stores/queueStore';
 import { useSoundStore } from '../stores/soundStore';
@@ -61,22 +63,56 @@ export const favoriteShuffle = (count = 50): void => {
   }
 };
 
-export const startWave = (count = 40): void => {
+export const startWave = async (count = 40): Promise<void> => {
   const favorites = useFavoritesStore
     .getState()
     .tracks.map((entry) => entry.ref);
+  const current = useQueueStore.getState().getCurrentItem()?.track;
 
-  if (!favorites.length) {
+  // Favorites/current track are only the recommendation context. The
+  // discovery provider supplies the actual candidates from its catalogue,
+  // so My Wave is no longer limited to liked tracks.
+  const context = current
+    ? [current, ...favorites.filter((track) => trackId(track) !== trackId(current))]
+    : favorites;
+
+  if (!context.length) {
     return;
   }
 
-  const tracks = favorites
-    .map((track) => ({ track, score: score(track, favorites) }))
+  const discoveryProviderId = providersHost.getActive('discovery');
+  if (!discoveryProviderId) {
+    return;
+  }
+
+  const recommended = await discoveryHost.getRecommendations(
+    context,
+    {
+      variety: 0.85,
+      limit: Math.max(count * 3, 100),
+    },
+    discoveryProviderId,
+  );
+
+  const contextIds = new Set(context.map(trackId));
+  const unique = new Map<string, Track>();
+
+  for (const track of recommended) {
+    const id = trackId(track);
+    if (!contextIds.has(id) && !unique.has(id) && !recentIds.has(id)) {
+      unique.set(id, track);
+    }
+  }
+
+  const tracks = [...unique.values()]
+    .map((track) => ({ track, score: score(track, context) }))
     .sort((a, b) => b.score - a.score)
-    .slice(0, Math.min(count, favorites.length))
+    .slice(0, count)
     .map(({ track }) => track);
 
-  useQueueStore.getState().addToQueue(tracks);
+  if (tracks.length) {
+    useQueueStore.getState().addToQueue(tracks);
+  }
 };
 
 export const openLyricsForCurrentTrack = async (): Promise<void> => {
@@ -96,7 +132,7 @@ export const openLyricsForCurrentTrack = async (): Promise<void> => {
 
 export const initPowerToolsService = (): void => {
   void listen('powertools:favorite-shuffle', () => favoriteShuffle());
-  void listen('powertools:wave', () => startWave());
+  void listen('powertools:wave', () => void startWave());
   void listen('powertools:lyrics', () => void openLyricsForCurrentTrack());
   void listen('powertools:play-toggle', () => {
     const sound = useSoundStore.getState();
