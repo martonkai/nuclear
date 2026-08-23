@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - feature/powertools
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   windows-release:
-    if: startsWith(github.event.head_commit.message, '[powertools-release]')
     runs-on: windows-latest
 
     steps:
