@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Disable updater signing for community build
+      - name: Disable updater artifacts for unsigned community build
         shell: pwsh
         run: |
           $path = 'packages/player/src-tauri/tauri.conf.json'
@@ -51,8 +51,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: packages/player
-          tagName: powertools-0.1.0
-          releaseName: Nuclear PowerTools v0.1.0
+          tagName: powertools-${{ github.run_number }}
+          releaseName: Nuclear PowerTools v0.1.0 build ${{ github.run_number }}
           releaseBody: |
             Windows x64 build of Nuclear with PowerTools integration.
 
@@ -60,4 +60,6 @@ jobs:
           releaseDraft: false
           prerelease: true
           uploadWorkflowArtifacts: true
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
           args: --ci
