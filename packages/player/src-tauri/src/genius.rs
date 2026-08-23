@@ -12,7 +12,7 @@ pub struct GeniusLyrics {
 
 #[tauri::command]
 #[specta::specta]
-pub fn genius_lyrics(artist: String, title: String) -> Result<Option<GeniusLyrics>, String> {
+pub fn genius_lyrics(artist: String, title: String) -> Result<GeniusLyrics, String> {
     let client = Client::builder()
         .user_agent("Nuclear PowerTools/0.1")
         .build()
@@ -22,7 +22,7 @@ pub fn genius_lyrics(artist: String, title: String) -> Result<Option<GeniusLyric
     let search_url = format!("https://genius.com/api/search/multi?q={query}");
     let search = client.get(search_url).send().map_err(|e| e.to_string())?;
     if !search.status().is_success() {
-        return Ok(None);
+        return Err(format!("Genius search failed: HTTP {}", search.status()));
     }
 
     let payload: serde_json::Value = search.json().map_err(|e| e.to_string())?;
@@ -53,28 +53,28 @@ pub fn genius_lyrics(artist: String, title: String) -> Result<Option<GeniusLyric
     }
 
     let Some((score, hit_title, hit_artist, url)) = best else {
-        return Ok(None);
+        return Err("Genius track not found".to_string());
     };
     if score < 0.72 {
-        return Ok(None);
+        return Err("No sufficiently close Genius match found".to_string());
     }
 
     let page = client.get(&url).send().map_err(|e| e.to_string())?;
     if !page.status().is_success() {
-        return Ok(None);
+        return Err(format!("Genius page failed: HTTP {}", page.status()));
     }
 
     let text = extract_lyrics(&page.text().map_err(|e| e.to_string())?);
     if text.is_empty() {
-        return Ok(None);
+        return Err("Genius lyrics not found on the page".to_string());
     }
 
-    Ok(Some(GeniusLyrics {
+    Ok(GeniusLyrics {
         title: hit_title,
         artist: hit_artist,
         url,
         text,
-    }))
+    })
 }
 
 fn normalize(value: &str) -> String {
