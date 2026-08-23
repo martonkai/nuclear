@@ -1,13 +1,13 @@
-import isEmpty from 'lodash-es/isEmpty';
+import { isEmpty } from 'lodash-es';
 import { FC, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { useTranslation } from '@nuclearplayer/i18n';
 import type { DashboardProvider } from '@nuclearplayer/plugin-sdk';
 import { Loader, ViewShell } from '@nuclearplayer/ui';
-
 import { useProviders } from '../../hooks/useProviders';
 import { useStartupStore } from '../../stores/startupStore';
 import { DashboardEmptyState } from './components/DashboardEmptyState';
+import { PowerToolsWidget } from './components/PowerToolsWidget';
 import { DASHBOARD_WIDGETS, DashboardWidgetEntry } from './dashboardWidgets';
 
 const DashboardContent: FC<{
@@ -22,13 +22,18 @@ const DashboardContent: FC<{
     );
   }
 
-  if (isEmpty(activeWidgets)) {
-    return <DashboardEmptyState />;
-  }
-
-  return activeWidgets.map(({ capability, component: Widget }) => (
-    <Widget key={capability} />
-  ));
+  return (
+    <>
+      <PowerToolsWidget />
+      {isEmpty(activeWidgets) ? (
+        <DashboardEmptyState />
+      ) : (
+        activeWidgets.map(({ capability, component: Widget }) => (
+          <Widget key={capability} />
+        ))
+      )}
+    </>
+  );
 };
 
 export const Dashboard: FC = () => {

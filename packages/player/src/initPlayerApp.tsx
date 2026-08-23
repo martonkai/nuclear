@@ -18,6 +18,7 @@ import { loadMarketplaceThemes } from './services/marketplaceThemeDirService';
 import { initMcpHandler } from './services/mcp';
 import { initMpdHandler } from './services/mpd';
 import { initPlaybackEventBridge } from './services/playbackEventBridge';
+import { initPowerToolsService } from './services/powertools';
 import { hydratePluginsFromRegistry } from './services/plugins/pluginBootstrap';
 import { ytdlpEnsureInstalled } from './services/tauri/commands';
 import { initializeFavoritesStore } from './stores/favoritesStore';
@@ -32,7 +33,6 @@ export const initPlayerApp = async (
   root: ReturnType<typeof import('react-dom/client').createRoot>,
 ) => {
   initLogStream();
-
   await initializeSettingsStore()
     .then(() => initializeShortcutsStore())
     .then(() => initializeQueueStore())
@@ -54,6 +54,7 @@ export const initPlayerApp = async (
     .then(() => hydrateThemeStore())
     .then(() => applyThemeFromSettingsIfAny())
     .then(() => {
+      initPowerToolsService();
       void hydratePluginsFromRegistry();
       void useUpdaterStore.getState().checkForUpdate();
       void ytdlpEnsureInstalled();
