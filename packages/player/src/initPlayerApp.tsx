@@ -10,12 +10,15 @@ import { initDiscordHandler } from './services/discordHandler';
 import { initDiscoveryService } from './services/discoveryService';
 import { initHistoryService } from './services/history';
 import { initHttpApiHandler } from './services/httpApi';
-import { initPowerToolsService } from './services/powertools';
-import { applyLanguageFromSettings, initLanguageWatcher } from './services/languageService';
+import {
+  applyLanguageFromSettings,
+  initLanguageWatcher,
+} from './services/languageService';
 import { loadMarketplaceThemes } from './services/marketplaceThemeDirService';
 import { initMcpHandler } from './services/mcp';
 import { initMpdHandler } from './services/mpd';
 import { initPlaybackEventBridge } from './services/playbackEventBridge';
+import { initPowerToolsService } from './services/powertools';
 import { hydratePluginsFromRegistry } from './services/plugins/pluginBootstrap';
 import { ytdlpEnsureInstalled } from './services/tauri/commands';
 import { initializeFavoritesStore } from './stores/favoritesStore';
@@ -26,7 +29,9 @@ import { initializeShortcutsStore } from './stores/shortcutsStore';
 import { hydrateThemeStore } from './stores/themeStore';
 import { useUpdaterStore } from './stores/updaterStore';
 
-export const initPlayerApp = async (root: ReturnType<typeof import('react-dom/client').createRoot>) => {
+export const initPlayerApp = async (
+  root: ReturnType<typeof import('react-dom/client').createRoot>,
+) => {
   initLogStream();
   await initializeSettingsStore()
     .then(() => initializeShortcutsStore())
@@ -55,5 +60,9 @@ export const initPlayerApp = async (root: ReturnType<typeof import('react-dom/cl
       void ytdlpEnsureInstalled();
     });
 
-  root.render(<React.StrictMode><App /></React.StrictMode>);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
 };
