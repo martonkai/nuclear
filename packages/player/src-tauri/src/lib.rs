@@ -10,19 +10,17 @@ pub mod mcp;
 pub mod mpd;
 pub mod net;
 pub mod pagination;
+pub mod powertools;
 mod setup;
 pub mod stream_server;
 pub mod ytdlp;
 pub mod ytdlp_setup;
 
-// Maximizes the window when running as a non-steam app in steam
 #[cfg(target_os = "linux")]
 fn maximize_for_gamescope(app: &tauri::App) {
     use tauri::Manager;
-
     let is_gamescope = std::env::var("GAMESCOPE_WAYLAND_DISPLAY").is_ok()
         || std::env::var("SteamDeck").map_or(false, |v| v == "1");
-
     if is_gamescope {
         if let Some(window) = app.get_webview_window("main") {
             let _ = window.maximize();
@@ -74,18 +72,11 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let is_flatpak = std::env::var("FLATPAK_ID").is_ok();
-
     let specta_builder = specta_builder();
 
     #[cfg(debug_assertions)]
     specta_builder
-        .export(
-            typescript_export_config(),
-            concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/../src/services/tauri/bindings.ts"
-            ),
-        )
+        .export(typescript_export_config(), concat!(env!("CARGO_MANIFEST_DIR"), "/../src/services/tauri/bindings.ts"))
         .expect("failed to export typescript bindings");
 
     let mut builder = tauri::Builder::default()
@@ -115,6 +106,7 @@ pub fn run() {
             stream_server::init_stream_server(app.handle().clone());
             discord::init_discord(app.handle().clone());
             history::init_history(app.handle().clone());
+            powertools::setup(app.handle())?;
 
             #[cfg(target_os = "linux")]
             maximize_for_gamescope(app);
