@@ -2,6 +2,7 @@ import { isEmpty } from 'lodash-es';
 import { FC, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import type { DashboardProvider } from '@nuclearplayer/plugin-sdk';
 import { Loader, ViewShell } from '@nuclearplayer/ui';
 import { useProviders } from '../../hooks/useProviders';
 import { useStartupStore } from '../../stores/startupStore';
@@ -38,7 +39,7 @@ const DashboardContent: FC<{
 export const Dashboard: FC = () => {
   const { t } = useTranslation('dashboard');
   const isStartingUp = useStartupStore((state) => state.isStartingUp);
-  const providers = useProviders('dashboard');
+  const providers = useProviders('dashboard') as DashboardProvider[];
 
   const activeWidgets = useMemo(() => {
     const capabilities = new Set(
