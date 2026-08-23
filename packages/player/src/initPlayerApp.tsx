@@ -10,10 +10,8 @@ import { initDiscordHandler } from './services/discordHandler';
 import { initDiscoveryService } from './services/discoveryService';
 import { initHistoryService } from './services/history';
 import { initHttpApiHandler } from './services/httpApi';
-import {
-  applyLanguageFromSettings,
-  initLanguageWatcher,
-} from './services/languageService';
+import { initPowerToolsService } from './services/powertools';
+import { applyLanguageFromSettings, initLanguageWatcher } from './services/languageService';
 import { loadMarketplaceThemes } from './services/marketplaceThemeDirService';
 import { initMcpHandler } from './services/mcp';
 import { initMpdHandler } from './services/mpd';
@@ -28,11 +26,8 @@ import { initializeShortcutsStore } from './stores/shortcutsStore';
 import { hydrateThemeStore } from './stores/themeStore';
 import { useUpdaterStore } from './stores/updaterStore';
 
-export const initPlayerApp = async (
-  root: ReturnType<typeof import('react-dom/client').createRoot>,
-) => {
+export const initPlayerApp = async (root: ReturnType<typeof import('react-dom/client').createRoot>) => {
   initLogStream();
-
   await initializeSettingsStore()
     .then(() => initializeShortcutsStore())
     .then(() => initializeQueueStore())
@@ -54,14 +49,11 @@ export const initPlayerApp = async (
     .then(() => hydrateThemeStore())
     .then(() => applyThemeFromSettingsIfAny())
     .then(() => {
+      initPowerToolsService();
       void hydratePluginsFromRegistry();
       void useUpdaterStore.getState().checkForUpdate();
       void ytdlpEnsureInstalled();
     });
 
-  root.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
-  );
+  root.render(<React.StrictMode><App /></React.StrictMode>);
 };
