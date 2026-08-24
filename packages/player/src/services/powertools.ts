@@ -5,10 +5,13 @@ import { formatArtistNames, type Track } from '@nuclearplayer/model';
 import { discoveryHost } from './discoveryHost';
 import { providersHost } from './providersHost';
 import { useFavoritesStore } from '../stores/favoritesStore';
+import { useLyricsStore, type LyricsData } from '../stores/lyricsStore';
 import { useQueueStore } from '../stores/queueStore';
 import { useSoundStore } from '../stores/soundStore';
 
 const recentIds = new Set<string>();
+const lyricsCache = new Map<string, LyricsData>();
+let lastLyricsTrackId: string | null = null;
 
 const trackId = (track: Track): string =>
   `${track.source.provider}:${track.source.id}`;
@@ -69,9 +72,6 @@ export const startWave = async (count = 40): Promise<void> => {
     .tracks.map((entry) => entry.ref);
   const current = useQueueStore.getState().getCurrentItem()?.track;
 
-  // Favorites/current track are only the recommendation context. The
-  // discovery provider supplies the actual candidates from its catalogue,
-  // so My Wave is no longer limited to liked tracks.
   const context = current
     ? [current, ...favorites.filter((track) => trackId(track) !== trackId(current))]
     : favorites;
@@ -115,19 +115,57 @@ export const startWave = async (count = 40): Promise<void> => {
   }
 };
 
-export const openLyricsForCurrentTrack = async (): Promise<void> => {
-  const item = useQueueStore.getState().getCurrentItem();
+const loadLyrics = async (track: Track, open = true): Promise<void> => {
+  const id = trackId(track);
+  const artist = formatArtistNames(track.artists);
+  const title = track.title;
+  const lyricsStore = useLyricsStore.getState();
 
-  if (!item) {
+  if (open) {
+    lyricsStore.setOpen(true);
+  }
+
+  const cached = lyricsCache.get(id);
+  if (cached) {
+    lyricsStore.setData(id, cached);
     return;
   }
 
-  const track = item.track;
+  lyricsStore.setLoading(id);
 
-  await invoke('genius_lyrics', {
-    artist: formatArtistNames(track.artists),
-    title: track.title,
-  });
+  try {
+    const result = await invoke<LyricsData>('genius_lyrics', {
+      artist,
+      title,
+    });
+
+    lyricsCache.set(id, result);
+    lyricsStore.setData(id, result);
+  } catch (error) {
+    lyricsStore.setError(
+      id,
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+};
+
+export const openLyricsForCurrentTrack = async (): Promise<void> => {
+  const item = useQueueStore.getState().getCurrentItem();
+
+  if (item) {
+    await loadLyrics(item.track, true);
+  }
+};
+
+const handleCurrentTrackChanged = (track: Track): void => {
+  const id = trackId(track);
+
+  if (id === lastLyricsTrackId) {
+    return;
+  }
+
+  lastLyricsTrackId = id;
+  void loadLyrics(track, true);
 };
 
 export const initPowerToolsService = (): void => {
@@ -155,6 +193,7 @@ export const initPowerToolsService = (): void => {
 
     if (current) {
       recentIds.add(trackId(current.track));
+      handleCurrentTrackChanged(current.track);
     }
 
     if (recentIds.size > 50) {
@@ -165,4 +204,9 @@ export const initPowerToolsService = (): void => {
       }
     }
   });
+
+  const current = useQueueStore.getState().getCurrentItem()?.track;
+  if (current) {
+    handleCurrentTrackChanged(current);
+  }
 };
