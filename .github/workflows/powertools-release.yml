@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/powertools
+      - feature/powertools-v2
   workflow_dispatch:
 
 permissions:
@@ -50,11 +51,11 @@ jobs:
         with:
           projectPath: packages/player
           tagName: powertools-${{ github.run_number }}
-          releaseName: Nuclear PowerTools v0.1.0 build ${{ github.run_number }}
+          releaseName: Nuclear PowerTools v0.2.0 build ${{ github.run_number }}
           releaseBody: |
             Windows x64 build of Nuclear with PowerTools integration.
 
-            Includes My Wave, favorite shuffle, Genius lyrics integration, native tray controls and dashboard integration.
+            Includes My Wave, favorite shuffle, automatic lyrics with lyrics.ovh and Genius fallback, native tray controls and player-bar controls.
           releaseDraft: false
           prerelease: true
           uploadWorkflowArtifacts: true
