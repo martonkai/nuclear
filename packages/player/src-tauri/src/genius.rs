@@ -45,14 +45,14 @@ fn lyrics_ovh(client: &Client, artist: &str, title: &str) -> Result<LyricsResult
         title: title.to_string(),
         artist: artist.to_string(),
         album: String::new(),
-        url: format!("https://lyrics.ovh/"),
+        url: "https://lyrics.ovh/".to_string(),
         text,
         synced: None,
         source: "lyrics.ovh".to_string(),
     })
 }
 
-fn genius_lyrics(client: &Client, artist: &str, title: &str) -> Result<LyricsResult, String> {
+fn genius_fallback(client: &Client, artist: &str, title: &str) -> Result<LyricsResult, String> {
     let query = utf8_percent_encode(&format!("{artist} {title}"), NON_ALPHANUMERIC).to_string();
     let search_url = format!("https://genius.com/api/search/multi?per_page=10&q={query}");
     let response = client
@@ -158,11 +158,9 @@ pub fn genius_lyrics(artist: String, title: String) -> Result<LyricsResult, Stri
         .build()
         .map_err(|e| e.to_string())?;
 
-    // Primary source: lightweight public lyrics API.
-    // Fallback: Genius search + page parser.
     match lyrics_ovh(&client, &artist, &title) {
         Ok(result) => Ok(result),
-        Err(primary_error) => genius_lyrics(&client, &artist, &title)
+        Err(primary_error) => genius_fallback(&client, &artist, &title)
             .map_err(|fallback_error| format!("{primary_error}; Genius fallback failed: {fallback_error}")),
     }
 }
