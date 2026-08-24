@@ -1,11 +1,24 @@
 import { FC } from 'react';
+import {
+  HeartIcon,
+  ListMusicIcon,
+  Mic2Icon,
+  WavesIcon,
+} from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useTranslation } from '@nuclearplayer/i18n';
 import { RepeatMode } from '@nuclearplayer/plugin-sdk';
-import { PlayerBar } from '@nuclearplayer/ui';
+import { Button, PlayerBar } from '@nuclearplayer/ui';
 
 import { useCoreSetting } from '../../hooks/useCoreSetting';
+import {
+  favoriteShuffle,
+  openLyricsForCurrentTrack,
+  startWave,
+} from '../../services/powertools';
+import { useFavoritesStore } from '../../stores/favoritesStore';
+import { useLyricsStore } from '../../stores/lyricsStore';
 import { useProviders } from '../../hooks/useProviders';
 import { playbackManager } from '../../services/playback';
 import { useQueueStore } from '../../stores/queueStore';
@@ -20,6 +33,17 @@ export const ConnectedControls: FC = () => {
   const [discoveryEnabled, setDiscoveryEnabled] =
     useCoreSetting<boolean>('playback.discovery');
   const hasDiscoveryProviders = useProviders('discovery').length > 0;
+  const lyricsOpen = useLyricsStore((state) => state.isOpen);
+  const currentTrack = useQueueStore((state) => state.getCurrentItem()?.track);
+  const isFavorite = useFavoritesStore((state) =>
+    currentTrack
+      ? state.tracks.some(
+          (entry) =>
+            entry.ref.source.provider === currentTrack.source.provider &&
+            entry.ref.source.id === currentTrack.source.id,
+        )
+      : false,
+  );
 
   const { goToNext, goToPrevious } = useQueueStore(
     useShallow((state) => ({
@@ -45,29 +69,71 @@ export const ConnectedControls: FC = () => {
   };
 
   return (
-    <PlayerBar.Controls
-      isPlaying={status === 'playing'}
-      isShuffleActive={Boolean(shuffleEnabled)}
-      repeatMode={repeatMode ?? 'off'}
-      onPlayPause={playbackManager.toggle}
-      onNext={goToNext}
-      onPrevious={goToPrevious}
-      onShuffleToggle={handleToggleShuffle}
-      onRepeatToggle={handleToggleRepeat}
-      isDiscoveryActive={hasDiscoveryProviders && Boolean(discoveryEnabled)}
-      onDiscoveryToggle={
-        hasDiscoveryProviders ? handleToggleDiscovery : undefined
-      }
-      showDiscovery={hasDiscoveryProviders}
-      labels={{
-        shuffleOn: t('shuffleOn'),
-        shuffleOff: t('shuffleOff'),
-        repeatOff: t('repeatOff'),
-        repeatAll: t('repeatAll'),
-        repeatOne: t('repeatOne'),
-        discoveryOn: t('discoveryOn'),
-        discoveryOff: t('discoveryOff'),
-      }}
-    />
+    <div className="flex min-w-0 items-center justify-center gap-1">
+      <div className="flex items-center gap-1">
+        <Button
+          variant="text"
+          size="icon-sm"
+          aria-label="My Wave"
+          title="My Wave"
+          onClick={() => void startWave()}
+        >
+          <WavesIcon size={17} />
+        </Button>
+        <Button
+          variant="text"
+          size="icon-sm"
+          aria-label="Shuffle Favorites"
+          title="Shuffle Favorites"
+          onClick={() => favoriteShuffle()}
+        >
+          <ListMusicIcon size={17} />
+        </Button>
+        <Button
+          variant={isFavorite ? 'default' : 'text'}
+          size="icon-sm"
+          aria-label="Favorite"
+          title="Favorite"
+          disabled={!currentTrack}
+        >
+          <HeartIcon size={17} />
+        </Button>
+        <Button
+          variant={lyricsOpen ? 'default' : 'text'}
+          size="icon-sm"
+          aria-label="Lyrics"
+          title="Lyrics"
+          onClick={() => void openLyricsForCurrentTrack()}
+          disabled={!currentTrack}
+        >
+          <Mic2Icon size={17} />
+        </Button>
+      </div>
+
+      <PlayerBar.Controls
+        isPlaying={status === 'playing'}
+        isShuffleActive={Boolean(shuffleEnabled)}
+        repeatMode={repeatMode ?? 'off'}
+        onPlayPause={playbackManager.toggle}
+        onNext={goToNext}
+        onPrevious={goToPrevious}
+        onShuffleToggle={handleToggleShuffle}
+        onRepeatToggle={handleToggleRepeat}
+        isDiscoveryActive={hasDiscoveryProviders && Boolean(discoveryEnabled)}
+        onDiscoveryToggle={
+          hasDiscoveryProviders ? handleToggleDiscovery : undefined
+        }
+        showDiscovery={hasDiscoveryProviders}
+        labels={{
+          shuffleOn: t('shuffleOn'),
+          shuffleOff: t('shuffleOff'),
+          repeatOff: t('repeatOff'),
+          repeatAll: t('repeatAll'),
+          repeatOne: t('repeatOne'),
+          discoveryOn: t('discoveryOn'),
+          discoveryOff: t('discoveryOff'),
+        }}
+      />
+    </div>
   );
 };
