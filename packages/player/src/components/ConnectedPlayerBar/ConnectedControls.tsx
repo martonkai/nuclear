@@ -12,15 +12,15 @@ import { RepeatMode } from '@nuclearplayer/plugin-sdk';
 import { Button, PlayerBar } from '@nuclearplayer/ui';
 
 import { useCoreSetting } from '../../hooks/useCoreSetting';
+import { useProviders } from '../../hooks/useProviders';
 import {
   favoriteShuffle,
   openLyricsForCurrentTrack,
   startWave,
 } from '../../services/powertools';
+import { playbackManager } from '../../services/playback';
 import { useFavoritesStore } from '../../stores/favoritesStore';
 import { useLyricsStore } from '../../stores/lyricsStore';
-import { useProviders } from '../../hooks/useProviders';
-import { playbackManager } from '../../services/playback';
 import { useQueueStore } from '../../stores/queueStore';
 import { useSoundStore } from '../../stores/soundStore';
 
@@ -36,13 +36,7 @@ export const ConnectedControls: FC = () => {
   const lyricsOpen = useLyricsStore((state) => state.isOpen);
   const currentTrack = useQueueStore((state) => state.getCurrentItem()?.track);
   const isFavorite = useFavoritesStore((state) =>
-    currentTrack
-      ? state.tracks.some(
-          (entry) =>
-            entry.ref.source.provider === currentTrack.source.provider &&
-            entry.ref.source.id === currentTrack.source.id,
-        )
-      : false,
+    currentTrack ? state.isTrackFavorite(currentTrack.source) : false,
   );
 
   const { goToNext, goToPrevious } = useQueueStore(
@@ -53,19 +47,24 @@ export const ConnectedControls: FC = () => {
   );
   const status = useSoundStore((state) => state.status);
 
-  const handleToggleShuffle = () => {
-    setShuffleEnabled(!shuffleEnabled);
-  };
-
-  const handleToggleDiscovery = () => {
-    setDiscoveryEnabled(!discoveryEnabled);
-  };
+  const handleToggleShuffle = () => setShuffleEnabled(!shuffleEnabled);
+  const handleToggleDiscovery = () => setDiscoveryEnabled(!discoveryEnabled);
 
   const handleToggleRepeat = () => {
     const modes: Array<RepeatMode> = ['off', 'all', 'one'];
     const currentIndex = modes.indexOf(repeatMode ?? 'off');
     const nextIndex = (currentIndex + 1) % modes.length;
     setRepeatMode(modes[nextIndex]);
+  };
+
+  const toggleFavorite = () => {
+    if (!currentTrack) return;
+
+    if (isFavorite) {
+      void useFavoritesStore.getState().removeTrack(currentTrack.source);
+    } else {
+      void useFavoritesStore.getState().addTrack(currentTrack);
+    }
   };
 
   return (
@@ -95,6 +94,7 @@ export const ConnectedControls: FC = () => {
           aria-label="Favorite"
           title="Favorite"
           disabled={!currentTrack}
+          onClick={toggleFavorite}
         >
           <HeartIcon size={17} />
         </Button>
