@@ -21,6 +21,7 @@ import {
 } from '@nuclearplayer/ui';
 
 import { ConnectedPlayerBar } from '../components/ConnectedPlayerBar';
+import { LyricsPanel } from '../components/LyricsPanel';
 import {
   ConnectedQueuePanel,
   QueueHeaderActions,
@@ -129,6 +130,7 @@ const RootComponent = () => {
         </PlayerWorkspace>
       </SoundProvider>
 
+      <LyricsPanel />
       <ConnectedPlayerBar />
       <Toaster />
       <ConnectedSettingsModal />
