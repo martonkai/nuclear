@@ -20,6 +20,7 @@ type LyricsState = {
   setData: (trackKey: string, data: LyricsData) => void;
   setError: (trackKey: string, error: string) => void;
   setOpen: (isOpen: boolean) => void;
+  clear: () => void;
 };
 
 export const useLyricsStore = create<LyricsState>((set) => ({
@@ -29,10 +30,12 @@ export const useLyricsStore = create<LyricsState>((set) => ({
   isOpen: false,
   error: null,
   setLoading: (trackKey) =>
-    set({ trackKey, isLoading: true, error: null, data: null, isOpen: true }),
+    set({ trackKey, isLoading: true, error: null, data: null }),
   setData: (trackKey, data) =>
-    set({ trackKey, data, isLoading: false, error: null, isOpen: true }),
+    set({ trackKey, data, isLoading: false, error: null }),
   setError: (trackKey, error) =>
-    set({ trackKey, data: null, isLoading: false, error, isOpen: true }),
+    set({ trackKey, data: null, isLoading: false, error }),
   setOpen: (isOpen) => set({ isOpen }),
+  clear: () =>
+    set({ trackKey: null, data: null, isLoading: false, isOpen: false, error: null }),
 }));
