@@ -15,40 +15,62 @@ pub struct LyricsResult {
     pub source: String,
 }
 
-fn lyrics_ovh(client: &Client, artist: &str, title: &str) -> Result<LyricsResult, String> {
+fn lyrically_request(
+    client: &Client,
+    provider: &str,
+    artist: &str,
+    title: &str,
+) -> Result<LyricsResult, String> {
     let artist_q = utf8_percent_encode(artist, NON_ALPHANUMERIC).to_string();
     let title_q = utf8_percent_encode(title, NON_ALPHANUMERIC).to_string();
-    let url = format!("https://api.lyrics.ovh/v1/{artist_q}/{title_q}");
+    let url = format!(
+        "https://lyrics.paxsenix.org/{provider}/lyrics?artist={artist_q}&title={title_q}"
+    );
 
     let response = client
-        .get(url)
+        .get(&url)
         .send()
-        .map_err(|e| format!("lyrics.ovh request failed: {e}"))?;
+        .map_err(|e| format!("Lyrically {provider} request failed: {e}"))?;
 
-    if response.status().as_u16() == 404 {
-        return Err("Lyrics not found in lyrics.ovh".to_string());
-    }
     if !response.status().is_success() {
-        return Err(format!("lyrics.ovh returned HTTP {}", response.status()));
+        return Err(format!(
+            "Lyrically {provider} returned HTTP {}",
+            response.status()
+        ));
     }
 
     let payload: Value = response
         .json()
-        .map_err(|e| format!("Invalid lyrics.ovh response: {e}"))?;
-    let text = payload["lyrics"].as_str().unwrap_or_default().trim().to_string();
+        .map_err(|e| format!("Invalid Lyrically {provider} response: {e}"))?;
+
+    let text = payload
+        .pointer("/lyrics")
+        .and_then(Value::as_str)
+        .or_else(|| payload.pointer("/data/lyrics").and_then(Value::as_str))
+        .or_else(|| payload.pointer("/result/lyrics").and_then(Value::as_str))
+        .or_else(|| payload.pointer("/data/plainLyrics").and_then(Value::as_str))
+        .unwrap_or_default()
+        .trim()
+        .to_string();
 
     if text.is_empty() {
-        return Err("lyrics.ovh returned empty lyrics".to_string());
+        return Err(format!("Lyrically {provider} returned empty lyrics"));
     }
+
+    let synced = payload
+        .pointer("/syncedLyrics")
+        .and_then(Value::as_str)
+        .or_else(|| payload.pointer("/data/syncedLyrics").and_then(Value::as_str))
+        .map(str::to_string);
 
     Ok(LyricsResult {
         title: title.to_string(),
         artist: artist.to_string(),
         album: String::new(),
-        url: "https://lyrics.ovh/".to_string(),
+        url: "https://lyrics.paxsenix.org/".to_string(),
         text,
-        synced: None,
-        source: "lyrics.ovh".to_string(),
+        synced,
+        source: format!("Lyrically / {provider}"),
     })
 }
 
@@ -153,14 +175,25 @@ fn genius_fallback(client: &Client, artist: &str, title: &str) -> Result<LyricsR
 #[specta::specta]
 pub fn genius_lyrics(artist: String, title: String) -> Result<LyricsResult, String> {
     let client = Client::builder()
-        .user_agent("Nuclear PowerTools/0.2 (https://github.com/nukeop/nuclear)")
+        .user_agent("Nuclear PowerTools/0.3 (https://github.com/nukeop/nuclear)")
         .timeout(std::time::Duration::from_secs(8))
         .build()
         .map_err(|e| e.to_string())?;
 
-    match lyrics_ovh(&client, &artist, &title) {
+    let mut errors = Vec::new();
+
+    for provider in ["kugou", "genius"] {
+        match lyrically_request(&client, provider, &artist, &title) {
+            Ok(result) => return Ok(result),
+            Err(error) => errors.push(error),
+        }
+    }
+
+    match genius_fallback(&client, &artist, &title) {
         Ok(result) => Ok(result),
-        Err(primary_error) => genius_fallback(&client, &artist, &title)
-            .map_err(|fallback_error| format!("{primary_error}; Genius fallback failed: {fallback_error}")),
+        Err(error) => {
+            errors.push(format!("direct Genius fallback failed: {error}"));
+            Err(errors.join("; "))
+        }
     }
 }
