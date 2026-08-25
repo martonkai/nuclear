@@ -1,6 +1,7 @@
 import { createRootRoute } from '@tanstack/react-router';
 import {
   CableIcon,
+  ChartNoAxesColumnIncreasingIcon,
   DiscIcon,
   GaugeIcon,
   HistoryIcon,
@@ -74,6 +75,11 @@ const RootComponent = () => {
                   to="/dashboard"
                   icon={<GaugeIcon />}
                   label={t('dashboard')}
+                />
+                <SidebarNavigationItem
+                  to="/charts"
+                  icon={<ChartNoAxesColumnIncreasingIcon />}
+                  label="Charts"
                 />
                 <SidebarNavigationItem
                   to="/favorites/albums"
