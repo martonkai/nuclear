@@ -1,4 +1,5 @@
 pub mod bridge;
+pub mod charts;
 pub mod commands;
 pub mod db;
 pub mod discord;
@@ -60,7 +61,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         history::commands::history_top_artists,
         history::commands::history_top_albums,
         history::commands::history_top_tracks,
-        genius::genius_lyrics
+        genius::genius_lyrics,
+        charts::fetch_charts
     ])
 }
 
