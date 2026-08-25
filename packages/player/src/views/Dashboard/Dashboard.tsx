@@ -1,9 +1,10 @@
 import { isEmpty } from 'lodash-es';
 import { FC, useMemo } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import type { DashboardProvider } from '@nuclearplayer/plugin-sdk';
-import { Loader, ViewShell } from '@nuclearplayer/ui';
+import { Button, Loader, ViewShell } from '@nuclearplayer/ui';
 import { useProviders } from '../../hooks/useProviders';
 import { useStartupStore } from '../../stores/startupStore';
 import { DashboardEmptyState } from './components/DashboardEmptyState';
@@ -24,6 +25,11 @@ const DashboardContent: FC<{
 
   return (
     <>
+      <div className="mb-4 flex justify-end">
+        <Button asChild variant="text">
+          <Link to="/charts">Charts</Link>
+        </Button>
+      </div>
       <PowerToolsWidget />
       {isEmpty(activeWidgets) ? (
         <DashboardEmptyState />
