@@ -51,11 +51,19 @@ jobs:
         with:
           projectPath: packages/player
           tagName: powertools-${{ github.run_number }}
-          releaseName: Nuclear PowerTools v0.2.0 build ${{ github.run_number }}
+          releaseName: Nuclear PowerTools v0.3.0 build ${{ github.run_number }}
           releaseBody: |
-            Windows x64 build of Nuclear with PowerTools integration.
+            Windows x64 community build of Nuclear PowerTools.
 
-            Includes My Wave, favorite shuffle, automatic lyrics with lyrics.ovh and Genius fallback, native tray controls and player-bar controls.
+            Includes:
+            - My Wave recommendations from the discovery catalogue
+            - Shuffle Favorites
+            - Lyrics on demand with a Russia-friendly multi-provider backend and Genius fallback
+            - Lyrics cache and safe failure handling
+            - Player-bar PowerTools controls
+            - Volume percentage
+            - Russia and global charts
+            - Native tray controls
           releaseDraft: false
           prerelease: true
           uploadWorkflowArtifacts: true
