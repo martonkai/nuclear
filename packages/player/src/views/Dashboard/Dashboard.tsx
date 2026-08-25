@@ -4,7 +4,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import type { DashboardProvider } from '@nuclearplayer/plugin-sdk';
-import { Button, Loader, ViewShell } from '@nuclearplayer/ui';
+import { Loader, ViewShell } from '@nuclearplayer/ui';
 import { useProviders } from '../../hooks/useProviders';
 import { useStartupStore } from '../../stores/startupStore';
 import { DashboardEmptyState } from './components/DashboardEmptyState';
@@ -26,9 +26,9 @@ const DashboardContent: FC<{
   return (
     <>
       <div className="mb-4 flex justify-end">
-        <Button asChild variant="text">
-          <Link to="/charts">Charts</Link>
-        </Button>
+        <Link to="/charts" className="text-sm underline underline-offset-4">
+          Charts
+        </Link>
       </div>
       <PowerToolsWidget />
       {isEmpty(activeWidgets) ? (
