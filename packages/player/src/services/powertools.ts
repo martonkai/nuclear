@@ -11,7 +11,6 @@ import { useSoundStore } from '../stores/soundStore';
 
 const recentIds = new Set<string>();
 const lyricsCache = new Map<string, LyricsData>();
-let lastLyricsTrackId: string | null = null;
 
 const trackId = (track: Track): string =>
   `${track.source.provider}:${track.source.id}`;
@@ -115,15 +114,13 @@ export const startWave = async (count = 40): Promise<void> => {
   }
 };
 
-const loadLyrics = async (track: Track, open = true): Promise<void> => {
+const loadLyrics = async (track: Track): Promise<void> => {
   const id = trackId(track);
   const artist = formatArtistNames(track.artists);
   const title = track.title;
   const lyricsStore = useLyricsStore.getState();
 
-  if (open) {
-    lyricsStore.setOpen(true);
-  }
+  lyricsStore.setOpen(true);
 
   const cached = lyricsCache.get(id);
   if (cached) {
@@ -153,19 +150,8 @@ export const openLyricsForCurrentTrack = async (): Promise<void> => {
   const item = useQueueStore.getState().getCurrentItem();
 
   if (item) {
-    await loadLyrics(item.track, true);
+    await loadLyrics(item.track);
   }
-};
-
-const handleCurrentTrackChanged = (track: Track): void => {
-  const id = trackId(track);
-
-  if (id === lastLyricsTrackId) {
-    return;
-  }
-
-  lastLyricsTrackId = id;
-  void loadLyrics(track, true);
 };
 
 export const initPowerToolsService = (): void => {
@@ -193,7 +179,6 @@ export const initPowerToolsService = (): void => {
 
     if (current) {
       recentIds.add(trackId(current.track));
-      handleCurrentTrackChanged(current.track);
     }
 
     if (recentIds.size > 50) {
@@ -204,9 +189,4 @@ export const initPowerToolsService = (): void => {
       }
     }
   });
-
-  const current = useQueueStore.getState().getCurrentItem()?.track;
-  if (current) {
-    handleCurrentTrackChanged(current);
-  }
 };
